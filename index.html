@@ -298,6 +298,53 @@
       cursor: default;
     }
 
+    .staff-actions {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .staff-actions-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .staff-actions-buttons button {
+      flex: 1;
+      min-width: 70px;
+    }
+
+    .staff-file-counter {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .staff-completed-badge {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .staff-completed-badge .completed-text {
+      color: #10b981;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .staff-completed-badge .completed-time {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
     .task-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(6, 182, 212, 0.2);
@@ -1186,10 +1233,75 @@
     function setRole(role) {
       currentUserRole = role;
       localStorage.setItem(ROLE_KEY, role);
+
+      // Add demo tasks for staff if no tasks exist
+      if (role === 'staff' && tasks.length === 0) {
+        addDemoTasks();
+      }
+
       updateUIForRole();
       renderBoard();
       closeAllModals();
       showStatusMessage(`Switched to ${role === 'admin' ? 'Admin' : 'Staff'} mode`, 'info');
+    }
+
+    function addDemoTasks() {
+      const demoTasks = [
+        {
+          id: generateId(),
+          title: '🏢 Visit Customer Site',
+          description: 'Check building condition and take photos as proof. Inspect all areas including exterior and interior.',
+          assignee: 'Staff',
+          priority: 'high',
+          dueDate: '2025-04-30',
+          status: 'todo',
+          location: null,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          activity: [{ action: 'Created', timestamp: Date.now() }],
+          startedAt: null,
+          completedAt: null,
+          startLocation: null,
+          uploadedFiles: []
+        },
+        {
+          id: generateId(),
+          title: '📸 Document Equipment Status',
+          description: 'Take photos of all equipment in the warehouse. Upload before and after images.',
+          assignee: 'Staff',
+          priority: 'medium',
+          dueDate: '2025-05-01',
+          status: 'todo',
+          location: null,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          activity: [{ action: 'Created', timestamp: Date.now() }],
+          startedAt: null,
+          completedAt: null,
+          startLocation: null,
+          uploadedFiles: []
+        },
+        {
+          id: generateId(),
+          title: '🛠️ Site Inspection Report',
+          description: 'Complete site inspection and upload video documentation of the work area and final results.',
+          assignee: 'Staff',
+          priority: 'high',
+          dueDate: '2025-04-28',
+          status: 'todo',
+          location: null,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          activity: [{ action: 'Created', timestamp: Date.now() }],
+          startedAt: null,
+          completedAt: null,
+          startLocation: null,
+          uploadedFiles: []
+        }
+      ];
+
+      tasks.push(...demoTasks);
+      saveTasks();
     }
 
     function loadRole() {
@@ -1984,45 +2096,46 @@
         if (task.status === 'todo') {
           // Task not started
           staffActionButtons = `
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-              <button type="button" class="btn btn-primary btn-sm" style="width: 100%; margin-bottom: 0.5rem;" onclick="event.stopPropagation(); staffStartTaskFromCard('${task.id}')">
-                🚀 Start Task
+            <div class="staff-actions">
+              <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); staffStartTaskFromCard('${task.id}')">
+                🚀 Start Task &amp; Capture Location
               </button>
             </div>
           `;
         } else if (task.status === 'inprogress') {
           // Task started - show upload and complete buttons
+          const filesCount = task.uploadedFiles && task.uploadedFiles.length > 0 ? task.uploadedFiles.length : 0;
           staffActionButtons = `
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-              <div class="upload-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
-                <div class="file-input-wrapper" style="flex: 1; min-width: 80px;">
-                  <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;" onclick="event.stopPropagation(); document.getElementById('staffImageInput_${task.id}').click()">
+            <div class="staff-actions">
+              <div class="staff-actions-buttons">
+                <div class="file-input-wrapper" style="flex: 1;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffImageInput_${task.id}').click()">
                     📷 Image
                   </button>
                   <input type="file" id="staffImageInput_${task.id}" accept="image/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'image')">
                 </div>
-                <div class="file-input-wrapper" style="flex: 1; min-width: 80px;">
-                  <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;" onclick="event.stopPropagation(); document.getElementById('staffVideoInput_${task.id}').click()">
+                <div class="file-input-wrapper" style="flex: 1;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffVideoInput_${task.id}').click()">
                     🎥 Video
                   </button>
                   <input type="file" id="staffVideoInput_${task.id}" accept="video/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'video')">
                 </div>
               </div>
               <button type="button" class="btn btn-success btn-sm" style="width: 100%;" onclick="event.stopPropagation(); staffCompleteTaskFromCard('${task.id}')">
-                ✅ Complete
+                ✅ Complete Task
               </button>
-              <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
-                ${task.uploadedFiles && task.uploadedFiles.length > 0 ? `${task.uploadedFiles.length} file(s) uploaded` : 'Upload proof required'}
+              <div class="staff-file-counter">
+                ${filesCount > 0 ? `✓ ${filesCount} file(s) uploaded` : '⚠️ Upload proof required'}
               </div>
             </div>
           `;
         } else if (task.status === 'complete') {
           // Task completed
           staffActionButtons = `
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center;">
-              <div style="color: #10b981; font-size: 0.875rem; font-weight: 600;">✅ Completed</div>
-              <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">
-                ${task.completedAt ? new Date(task.completedAt).toLocaleString() : ''}
+            <div class="staff-completed-badge">
+              <div class="completed-text">✅ Task Completed</div>
+              <div class="completed-time">
+                ${task.completedAt ? new Date(task.completedAt).toLocaleString() : 'Time not recorded'}
               </div>
             </div>
           `;
