@@ -226,6 +226,7 @@
       backdrop-filter: blur(10px);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       min-height: 500px;
+      transition: all 0.2s ease;
     }
 
     .column-header {
@@ -266,9 +267,11 @@
     }
 
     .column.drag-over {
-      background: rgba(6, 182, 212, 0.15);
+      background: rgba(6, 182, 212, 0.2);
+      border: 2px solid var(--cyan);
       border-color: var(--cyan);
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+      box-shadow: 0 0 24px rgba(6, 182, 212, 0.35), inset 0 0 12px rgba(6, 182, 212, 0.1);
+      transform: scale(1.01);
     }
 
     .empty-state {
@@ -302,10 +305,22 @@
       flex-direction: column;
       gap: 0.75rem;
       min-height: auto;
+      user-select: none;
+    }
+
+    .task-card:active {
+      cursor: grabbing;
     }
 
     .task-card.staff-mode {
-      cursor: default;
+      cursor: grab;
+    }
+
+    .task-card.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+      box-shadow: 0 12px 24px rgba(6, 182, 212, 0.3);
+      transform: rotate(2deg);
     }
 
     .staff-actions {
@@ -492,9 +507,9 @@
       border-color: var(--cyan);
     }
 
-    .task-card.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
+    .task-card.staff-mode:hover {
+      transform: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 
     .task-card.priority-high {
@@ -2110,9 +2125,6 @@
 
     // ============ DRAG & DROP ============
     function setupDragAndDrop() {
-      // Staff users cannot drag tasks
-      if (currentUserRole === 'staff') return;
-
       const cards = document.querySelectorAll('.task-card');
       const columnBodies = document.querySelectorAll('.column-body');
 
@@ -2121,10 +2133,18 @@
           card.classList.add('dragging');
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('taskId', card.dataset.taskId);
+          e.dataTransfer.setData('userRole', currentUserRole);
+          // Change cursor immediately
+          card.style.cursor = 'grabbing';
         });
 
-        card.addEventListener('dragend', () => {
+        card.addEventListener('dragend', (e) => {
           card.classList.remove('dragging');
+          card.style.cursor = 'grab';
+          // Remove drag-over from all columns on drag end
+          document.querySelectorAll('.column.drag-over').forEach(col => {
+            col.classList.remove('drag-over');
+          });
         });
       });
 
@@ -2136,6 +2156,7 @@
         });
 
         body.addEventListener('dragleave', (e) => {
+          // Only remove class if we're leaving the body itself, not a child
           if (e.target === body) {
             body.parentElement.classList.remove('drag-over');
           }
@@ -2146,26 +2167,53 @@
           body.parentElement.classList.remove('drag-over');
 
           const taskId = e.dataTransfer.getData('taskId');
+          const userRole = e.dataTransfer.getData('userRole');
           const newStatus = body.parentElement.dataset.status;
           const taskIndex = tasks.findIndex(t => t.id === taskId);
 
           if (taskIndex !== -1) {
-            const oldStatus = tasks[taskIndex].status;
-            tasks[taskIndex].status = newStatus;
-            tasks[taskIndex].updatedAt = Date.now();
-            if (!tasks[taskIndex].activity) tasks[taskIndex].activity = [];
-            tasks[taskIndex].activity.push({
-              action: `Moved to ${newStatus}`,
-              timestamp: Date.now()
-            });
+            const task = tasks[taskIndex];
+            const oldStatus = task.status;
 
-            // Confetti on complete
-            if (newStatus === 'complete' && oldStatus !== 'complete') {
-              celebrateCompletion();
+            // Staff validation rules
+            if (userRole === 'staff') {
+              // Staff moving to In Progress: must have captured location
+              if (newStatus === 'inprogress' && !task.startLocation) {
+                showStatusMessage('❌ Please capture location before moving to In Progress.', 'error');
+                return;
+              }
+              // Staff moving to Complete: must have proof uploaded
+              if (newStatus === 'complete' && (!task.uploadedFiles || task.uploadedFiles.length === 0)) {
+                showStatusMessage('❌ Please upload proof before completing.', 'error');
+                return;
+              }
             }
 
-            saveTasks();
-            renderBoard();
+            // Update status if changed
+            if (oldStatus !== newStatus) {
+              task.status = newStatus;
+              task.updatedAt = Date.now();
+              if (!task.activity) task.activity = [];
+              const statusLabels = {
+                'todo': 'To Do',
+                'inprogress': 'In Progress',
+                'complete': 'Complete',
+                'blocked': 'Blocked'
+              };
+              task.activity.push({
+                action: `Moved to ${statusLabels[newStatus]}`,
+                timestamp: Date.now()
+              });
+
+              // Confetti on complete
+              if (newStatus === 'complete' && oldStatus !== 'complete') {
+                celebrateCompletion();
+              }
+
+              saveTasks();
+              renderBoard();
+              showStatusMessage(`Task moved to ${statusLabels[newStatus]}`, 'info');
+            }
           }
         });
       });
@@ -2310,7 +2358,7 @@
       }
 
       return `
-        <div class="task-card priority-${task.priority}" data-task-id="${task.id}" ${!isStaff ? 'draggable="true"' : ''} ${!isStaff ? `onclick="${openHandler}"` : ''}>
+        <div class="task-card priority-${task.priority} ${isStaff ? 'staff-mode' : ''}" data-task-id="${task.id}" draggable="true" ${!isStaff ? `onclick="${openHandler}"` : ''}>
           <div class="task-header">
             <div class="task-title">${task.title}</div>
             <div class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</div>
