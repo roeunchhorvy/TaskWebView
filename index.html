@@ -291,6 +291,11 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      min-height: auto;
+    }
+
+    .task-card.staff-mode {
+      cursor: default;
     }
 
     .task-card:hover {
@@ -1237,6 +1242,114 @@
       setTimeout(() => msg.remove(), 3000);
     }
 
+    // ============ STAFF TASK ACTIONS (From Card) ============
+    function staffStartTaskFromCard(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      showStatusMessage('📍 Getting your location...', 'info');
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+            const address = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state || 'Location captured';
+
+            task.status = 'inprogress';
+            task.startedAt = Date.now();
+            task.startLocation = { lat: latitude, lng: longitude, address };
+            task.uploadedFiles = [];
+            if (!task.activity) task.activity = [];
+            task.activity.push({ action: 'Task started', timestamp: Date.now() });
+
+            saveTasks();
+            renderBoard();
+            showStatusMessage(`✅ Task started! Location: ${address}`, 'success');
+          } catch (error) {
+            console.error('Location error:', error);
+            task.status = 'inprogress';
+            task.startedAt = Date.now();
+            task.startLocation = { lat: latitude, lng: longitude, address: 'Location captured' };
+            task.uploadedFiles = [];
+            if (!task.activity) task.activity = [];
+            task.activity.push({ action: 'Task started', timestamp: Date.now() });
+
+            saveTasks();
+            renderBoard();
+            showStatusMessage('✅ Task started! (address lookup failed)', 'success');
+          }
+        },
+        (error) => {
+          showStatusMessage(`📍 Error: ${error.message}`, 'error');
+        }
+      );
+    }
+
+    function handleStaffFileUploadCard(taskId, type) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const inputId = `staff${type === 'image' ? 'Image' : 'Video'}Input_${taskId}`;
+      const input = document.getElementById(inputId);
+      const file = input.files[0];
+
+      if (!file) return;
+
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showStatusMessage('❌ File too large (max 10MB)', 'error');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fileObj = {
+          id: generateId(),
+          type: type,
+          name: file.name,
+          size: file.size,
+          data: e.target.result,
+          uploadedAt: Date.now()
+        };
+
+        if (!task.uploadedFiles) task.uploadedFiles = [];
+        task.uploadedFiles.push(fileObj);
+
+        saveTasks();
+        renderBoard();
+        showStatusMessage(`✅ ${type === 'image' ? 'Image' : 'Video'} uploaded (${task.uploadedFiles.length} file(s) total)`, 'success');
+      };
+
+      reader.readAsDataURL(file);
+      input.value = '';
+    }
+
+    function staffCompleteTaskFromCard(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      if (!task.uploadedFiles || task.uploadedFiles.length === 0) {
+        showStatusMessage('❌ Please upload at least one image or video before completing', 'error');
+        return;
+      }
+
+      task.status = 'complete';
+      task.completedAt = Date.now();
+      if (!task.activity) task.activity = [];
+      task.activity.push({ action: 'Task completed', timestamp: Date.now() });
+
+      saveTasks();
+      renderBoard();
+      celebrateCompletion();
+      showStatusMessage('✅ Task completed successfully!', 'success');
+    }
+
     // ============ STAFF TASK VIEW ============
     function openStaffTaskModal(taskId) {
       const task = tasks.find(t => t.id === taskId);
@@ -1865,8 +1978,59 @@
       const isStaff = currentUserRole === 'staff';
       const openHandler = isStaff ? `openStaffTaskModal('${task.id}')` : `openTaskModal('${task.id}')`;
 
+      // Staff action buttons for different task states
+      let staffActionButtons = '';
+      if (isStaff) {
+        if (task.status === 'todo') {
+          // Task not started
+          staffActionButtons = `
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <button type="button" class="btn btn-primary btn-sm" style="width: 100%; margin-bottom: 0.5rem;" onclick="event.stopPropagation(); staffStartTaskFromCard('${task.id}')">
+                🚀 Start Task
+              </button>
+            </div>
+          `;
+        } else if (task.status === 'inprogress') {
+          // Task started - show upload and complete buttons
+          staffActionButtons = `
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <div class="upload-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                <div class="file-input-wrapper" style="flex: 1; min-width: 80px;">
+                  <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;" onclick="event.stopPropagation(); document.getElementById('staffImageInput_${task.id}').click()">
+                    📷 Image
+                  </button>
+                  <input type="file" id="staffImageInput_${task.id}" accept="image/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'image')">
+                </div>
+                <div class="file-input-wrapper" style="flex: 1; min-width: 80px;">
+                  <button type="button" class="btn btn-secondary btn-sm" style="width: 100%;" onclick="event.stopPropagation(); document.getElementById('staffVideoInput_${task.id}').click()">
+                    🎥 Video
+                  </button>
+                  <input type="file" id="staffVideoInput_${task.id}" accept="video/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'video')">
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm" style="width: 100%;" onclick="event.stopPropagation(); staffCompleteTaskFromCard('${task.id}')">
+                ✅ Complete
+              </button>
+              <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
+                ${task.uploadedFiles && task.uploadedFiles.length > 0 ? `${task.uploadedFiles.length} file(s) uploaded` : 'Upload proof required'}
+              </div>
+            </div>
+          `;
+        } else if (task.status === 'complete') {
+          // Task completed
+          staffActionButtons = `
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: center;">
+              <div style="color: #10b981; font-size: 0.875rem; font-weight: 600;">✅ Completed</div>
+              <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.25rem;">
+                ${task.completedAt ? new Date(task.completedAt).toLocaleString() : ''}
+              </div>
+            </div>
+          `;
+        }
+      }
+
       return `
-        <div class="task-card priority-${task.priority}" data-task-id="${task.id}" ${!isStaff ? 'draggable="true"' : ''} onclick="${openHandler}">
+        <div class="task-card priority-${task.priority}" data-task-id="${task.id}" ${!isStaff ? 'draggable="true"' : ''} ${!isStaff ? `onclick="${openHandler}"` : ''}>
           <div class="task-header">
             <div class="task-title">${task.title}</div>
             <div class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</div>
@@ -1887,7 +2051,8 @@
           ` : ''}
           ${dueDateStatus.text ? `<div class="task-countdown ${dueDateStatus.isOverdue ? 'overdue' : ''}">${dueDateStatus.text}</div>` : ''}
           ${task.location ? `<div class="task-location">📍 ${task.location.address}</div>` : ''}
-          ${task.startedAt ? `<div class="task-location" style="color: #10b981;">✅ Started at ${new Date(task.startedAt).toLocaleString()}</div>` : ''}
+          ${task.startedAt ? `<div class="task-location" style="color: #10b981;">⏱️ Started: ${new Date(task.startedAt).toLocaleString()}</div>` : ''}
+          ${staffActionButtons}
         </div>
       `;
     }
