@@ -198,6 +198,16 @@
       font-size: 0.875rem;
     }
 
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn:disabled:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
     /* Kanban Board */
     .kanban-board {
       display: grid;
@@ -343,6 +353,137 @@
       color: var(--text-secondary);
       font-size: 0.75rem;
       margin-top: 0.25rem;
+    }
+
+    /* Location Preview Card */
+    .location-card {
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+    }
+
+    .location-address {
+      color: var(--cyan);
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .location-coords {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-family: 'Courier New', monospace;
+    }
+
+    .location-map-mini {
+      width: 100%;
+      height: 120px;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      border: 1px solid var(--border);
+      background: #1e293b;
+    }
+
+    /* Upload Preview */
+    .upload-preview {
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .preview-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 4px;
+      background: var(--slate-light);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .preview-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .preview-name {
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .preview-size {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    /* Loading State */
+    .loading-spinner {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.25rem;
+      vertical-align: -0.125em;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Alert Messages */
+    .alert {
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin: 0.5rem 0;
+      font-size: 0.875rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #a7f3d0;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .alert-info {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #67e8f9;
+    }
+
+    .alert-icon {
+      flex-shrink: 0;
+      font-size: 1rem;
+    }
+
+    .alert-content {
+      flex: 1;
     }
 
     .task-card:hover {
@@ -1350,7 +1491,16 @@
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
-      showStatusMessage('📍 Getting your location...', 'info');
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span>Getting location...';
+
+      if (!navigator.geolocation) {
+        showStatusMessage('❌ Geolocation not supported in your browser', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '📍 Start Task &amp; Capture Location';
+        return;
+      }
 
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -1366,9 +1516,9 @@
             task.status = 'inprogress';
             task.startedAt = Date.now();
             task.startLocation = { lat: latitude, lng: longitude, address };
-            task.uploadedFiles = [];
+            if (!task.uploadedFiles) task.uploadedFiles = [];
             if (!task.activity) task.activity = [];
-            task.activity.push({ action: 'Task started', timestamp: Date.now() });
+            task.activity.push({ action: 'Task started at ' + address, timestamp: Date.now() });
 
             saveTasks();
             renderBoard();
@@ -1378,7 +1528,7 @@
             task.status = 'inprogress';
             task.startedAt = Date.now();
             task.startLocation = { lat: latitude, lng: longitude, address: 'Location captured' };
-            task.uploadedFiles = [];
+            if (!task.uploadedFiles) task.uploadedFiles = [];
             if (!task.activity) task.activity = [];
             task.activity.push({ action: 'Task started', timestamp: Date.now() });
 
@@ -1388,7 +1538,13 @@
           }
         },
         (error) => {
-          showStatusMessage(`📍 Error: ${error.message}`, 'error');
+          btn.disabled = false;
+          btn.innerHTML = '📍 Start Task &amp; Capture Location';
+          if (error.code === 1) {
+            showStatusMessage('❌ Location permission denied. Please enable location access in browser settings.', 'error');
+          } else {
+            showStatusMessage(`❌ Error: ${error.message}`, 'error');
+          }
         }
       );
     }
@@ -1403,12 +1559,26 @@
 
       if (!file) return;
 
-      // Check file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        showStatusMessage('❌ File too large (max 10MB)', 'error');
+      // Validate file type
+      const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+      const validTypes = type === 'image' ? validImageTypes : validVideoTypes;
+
+      if (!validTypes.includes(file.type)) {
+        showStatusMessage(`❌ Invalid file type. Please upload a valid ${type}.`, 'error');
         input.value = '';
         return;
       }
+
+      // Check file size (max 50MB)
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showStatusMessage('❌ File too large (max 50MB)', 'error');
+        input.value = '';
+        return;
+      }
+
+      showStatusMessage(`📤 Uploading ${type}...`, 'info');
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -1424,33 +1594,68 @@
         if (!task.uploadedFiles) task.uploadedFiles = [];
         task.uploadedFiles.push(fileObj);
 
+        if (!task.activity) task.activity = [];
+        task.activity.push({ action: `${type === 'image' ? 'Image' : 'Video'} uploaded: ${file.name}`, timestamp: Date.now() });
+
         saveTasks();
         renderBoard();
-        showStatusMessage(`✅ ${type === 'image' ? 'Image' : 'Video'} uploaded (${task.uploadedFiles.length} file(s) total)`, 'success');
+        showStatusMessage(`✅ ${type === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total)`, 'success');
+      };
+
+      reader.onerror = () => {
+        showStatusMessage('❌ Error reading file', 'error');
+        input.value = '';
       };
 
       reader.readAsDataURL(file);
       input.value = '';
     }
 
+    function removeStaffFileFromCard(taskId, fileId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const fileIndex = task.uploadedFiles.findIndex(f => f.id === fileId);
+      if (fileIndex === -1) return;
+
+      const fileName = task.uploadedFiles[fileIndex].name;
+      task.uploadedFiles.splice(fileIndex, 1);
+
+      if (!task.activity) task.activity = [];
+      task.activity.push({ action: `File removed: ${fileName}`, timestamp: Date.now() });
+
+      saveTasks();
+      renderBoard();
+      showStatusMessage('📎 File removed', 'info');
+    }
+
     function staffCompleteTaskFromCard(taskId) {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
+      // Validate proof files
       if (!task.uploadedFiles || task.uploadedFiles.length === 0) {
-        showStatusMessage('❌ Please upload at least one image or video before completing', 'error');
+        showStatusMessage('❌ Please upload at least one image or video proof before completing this task.', 'error');
+        return;
+      }
+
+      // Confirm completion
+      if (!confirm(`Complete this task?\n\nTask: ${task.title}\nProof files: ${task.uploadedFiles.length}`)) {
         return;
       }
 
       task.status = 'complete';
       task.completedAt = Date.now();
       if (!task.activity) task.activity = [];
-      task.activity.push({ action: 'Task completed', timestamp: Date.now() });
+      task.activity.push({
+        action: `Task completed with ${task.uploadedFiles.length} proof file(s)`,
+        timestamp: Date.now()
+      });
 
       saveTasks();
       renderBoard();
       celebrateCompletion();
-      showStatusMessage('✅ Task completed successfully!', 'success');
+      showStatusMessage('✅ Task completed successfully! Great work!', 'success');
     }
 
     // ============ STAFF TASK VIEW ============
@@ -2010,15 +2215,49 @@
           staffActionButtons = `
             <div class="staff-actions">
               <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); staffStartTaskFromCard('${task.id}')">
-                🚀 Start Task &amp; Capture Location
+                📍 Start Task &amp; Capture Location
               </button>
             </div>
           `;
         } else if (task.status === 'inprogress') {
-          // Task started - show upload and complete buttons
+          // Task started - show location, upload and complete buttons
           const filesCount = task.uploadedFiles && task.uploadedFiles.length > 0 ? task.uploadedFiles.length : 0;
+
+          // Location preview
+          let locationPreview = '';
+          if (task.startLocation) {
+            const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${task.startLocation.lng-0.005},${task.startLocation.lat-0.005},${task.startLocation.lng+0.005},${task.startLocation.lat+0.005}&layer=mapnik&marker=${task.startLocation.lat},${task.startLocation.lng}`;
+            locationPreview = `
+              <div class="location-card">
+                <div class="location-address">📍 ${task.startLocation.address}</div>
+                <div class="location-coords">
+                  ${task.startLocation.lat.toFixed(6)}, ${task.startLocation.lng.toFixed(6)}
+                </div>
+                <iframe class="location-map-mini" src="${mapUrl}" style="border: none;" loading="lazy"></iframe>
+              </div>
+            `;
+          }
+
+          // Upload previews
+          let uploadPreviews = '';
+          if (task.uploadedFiles && task.uploadedFiles.length > 0) {
+            uploadPreviews = task.uploadedFiles.map(file => `
+              <div class="upload-preview">
+                ${file.type === 'image' ? `<img src="${file.data}" class="preview-thumb" alt="preview">` : `<div class="preview-thumb" style="background: #334155; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎥</div>`}
+                <div class="preview-info">
+                  <div class="preview-name">${file.name}</div>
+                  <div class="preview-size">${(file.size / 1024).toFixed(1)} KB</div>
+                </div>
+                <div class="preview-actions">
+                  <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); removeStaffFileFromCard('${task.id}', '${file.id}')">✕</button>
+                </div>
+              </div>
+            `).join('');
+          }
+
           staffActionButtons = `
             <div class="staff-actions">
+              ${locationPreview}
               <div class="staff-actions-buttons">
                 <div class="file-input-wrapper" style="flex: 1;">
                   <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffImageInput_${task.id}').click()">
@@ -2033,24 +2272,40 @@
                   <input type="file" id="staffVideoInput_${task.id}" accept="video/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'video')">
                 </div>
               </div>
-              <button type="button" class="btn btn-success btn-sm" style="width: 100%;" onclick="event.stopPropagation(); staffCompleteTaskFromCard('${task.id}')">
+              ${uploadPreviews ? `<div style="margin: 0.5rem 0;">${uploadPreviews}</div>` : ''}
+              <button type="button" class="btn btn-success btn-sm" style="width: 100%;" onclick="event.stopPropagation(); staffCompleteTaskFromCard('${task.id}')" ${filesCount === 0 ? 'disabled' : ''}>
                 ✅ Complete Task
               </button>
               <div class="staff-file-counter">
-                ${filesCount > 0 ? `✓ ${filesCount} file(s) uploaded` : '⚠️ Upload proof required'}
+                ${filesCount > 0 ? `✓ ${filesCount} file(s) uploaded` : '⚠️ Upload at least 1 proof file'}
               </div>
             </div>
           `;
         } else if (task.status === 'complete') {
-          // Task completed
-          staffActionButtons = `
+          // Task completed - show location, proof files, completion info
+          let completedContent = `
             <div class="staff-completed-badge">
               <div class="completed-text">✅ Task Completed</div>
               <div class="completed-time">
                 ${task.completedAt ? new Date(task.completedAt).toLocaleString() : 'Time not recorded'}
               </div>
-            </div>
           `;
+
+          if (task.startLocation) {
+            completedContent += `
+              <div class="location-card" style="margin-top: 0.5rem;">
+                <div class="location-address">📍 ${task.startLocation.address}</div>
+                <div class="location-coords">${task.startLocation.lat.toFixed(6)}, ${task.startLocation.lng.toFixed(6)}</div>
+              </div>
+            `;
+          }
+
+          if (task.uploadedFiles && task.uploadedFiles.length > 0) {
+            completedContent += `<div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">📎 ${task.uploadedFiles.length} proof file(s)</div>`;
+          }
+
+          completedContent += `</div>`;
+          staffActionButtons = completedContent;
         }
       }
 
