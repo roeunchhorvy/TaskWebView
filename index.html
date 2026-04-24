@@ -1194,15 +1194,6 @@
           </div>
         </div>
 
-        <!-- Location -->
-        <div class="form-section">
-          <h3>Location</h3>
-          <button type="button" class="btn btn-primary btn-sm" onclick="captureLocation()">
-            📍 Capture My Location
-          </button>
-          <div id="locationInfo"></div>
-        </div>
-
         <!-- Activity Log -->
         <div class="form-section" id="activitySection" style="display: none;">
           <h3>Activity</h3>
@@ -1788,63 +1779,6 @@
       }
     }
 
-    // ============ LOCATION FUNCTIONS ============
-    async function captureLocation() {
-      const locationInfo = document.getElementById('locationInfo');
-      locationInfo.innerHTML = '<p style="color: #06b6d4;">📍 Getting location...</p>';
-
-      if (!navigator.geolocation) {
-        locationInfo.innerHTML = '<p style="color: #ef4444;">Geolocation not supported</p>';
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            const data = await response.json();
-            const locationName = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state || 'Unknown Location';
-
-            displayLocation(latitude, longitude, locationName);
-
-            // Store in form
-            document.getElementById('taskForm').dataset.lat = latitude;
-            document.getElementById('taskForm').dataset.lng = longitude;
-            document.getElementById('taskForm').dataset.address = locationName;
-          } catch (error) {
-            console.error('Reverse geocoding failed:', error);
-            displayLocation(latitude, longitude, 'Location captured (address unavailable)');
-          }
-        },
-        (error) => {
-          locationInfo.innerHTML = `<p style="color: #ef4444;">Location access denied: ${error.message}</p>`;
-        }
-      );
-    }
-
-    function displayLocation(lat, lng, address) {
-      const locationInfo = document.getElementById('locationInfo');
-      const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.01},${lat-0.01},${lng+0.01},${lat+0.01}&layer=mapnik`;
-
-      locationInfo.innerHTML = `
-        <div class="location-info">
-          <p><strong>📍 ${address}</strong></p>
-          <p style="font-size: 0.75rem; color: #94a3b8;">Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</p>
-          <iframe
-            class="location-map"
-            src="${mapUrl}"
-            style="border: none; border-radius: 6px;"
-            allowfullscreen=""
-            loading="lazy">
-          </iframe>
-        </div>
-      `;
-    }
-
     // ============ TASK FUNCTIONS ============
     function createTask(formData) {
       const task = {
@@ -1855,18 +1789,14 @@
         priority: formData.priority,
         dueDate: formData.dueDate,
         status: 'todo',
-        location: formData.location ? {
-          lat: formData.location.lat,
-          lng: formData.location.lng,
-          address: formData.location.address
-        } : null,
+        location: null,  // Location capture is staff-only (startLocation field)
         createdAt: Date.now(),
         updatedAt: Date.now(),
         activity: [{ action: 'Created', timestamp: Date.now() }],
-        // Staff fields
+        // Staff execution fields (populated when staff starts task)
         startedAt: null,
         completedAt: null,
-        startLocation: null,
+        startLocation: null,  // GPS location captured when staff starts task
         uploadedFiles: []
       };
       return task;
@@ -1880,12 +1810,7 @@
         description: document.getElementById('taskDescription').value,
         assignee: document.getElementById('taskAssignee').value,
         priority: document.getElementById('taskPriority').value,
-        dueDate: document.getElementById('taskDueDate').value,
-        location: document.getElementById('taskForm').dataset.lat ? {
-          lat: parseFloat(document.getElementById('taskForm').dataset.lat),
-          lng: parseFloat(document.getElementById('taskForm').dataset.lng),
-          address: document.getElementById('taskForm').dataset.address
-        } : null
+        dueDate: document.getElementById('taskDueDate').value
       };
 
       if (currentEditingTaskId) {
@@ -1940,10 +1865,6 @@
       currentEditingTaskId = null;
       document.getElementById('modalTitle').textContent = 'New Task';
       document.getElementById('taskForm').reset();
-      document.getElementById('locationInfo').innerHTML = '';
-      document.getElementById('taskForm').dataset.lat = '';
-      document.getElementById('taskForm').dataset.lng = '';
-      document.getElementById('taskForm').dataset.address = '';
       document.getElementById('activitySection').style.display = 'none';
       document.getElementById('deleteBtn').style.display = 'none';
       document.getElementById('taskModal').classList.add('active');
@@ -1960,15 +1881,6 @@
       document.getElementById('taskAssignee').value = task.assignee;
       document.getElementById('taskPriority').value = task.priority;
       document.getElementById('taskDueDate').value = task.dueDate;
-
-      if (task.location) {
-        displayLocation(task.location.lat, task.location.lng, task.location.address);
-        document.getElementById('taskForm').dataset.lat = task.location.lat;
-        document.getElementById('taskForm').dataset.lng = task.location.lng;
-        document.getElementById('taskForm').dataset.address = task.location.address;
-      } else {
-        document.getElementById('locationInfo').innerHTML = '';
-      }
 
       // Activity Log
       if (task.activity && task.activity.length > 0) {
