@@ -1129,7 +1129,6 @@
         <div class="counter-badge">To Do: <strong id="todoCount">0</strong></div>
         <div class="counter-badge">In Progress: <strong id="inprogressCount">0</strong></div>
         <div class="counter-badge">Complete: <strong id="completeCount">0</strong></div>
-        <div class="counter-badge">Blocked: <strong id="blockedCount">0</strong></div>
       </div>
     </div>
   </header>
@@ -1159,7 +1158,6 @@
             <option value="todo">To Do</option>
             <option value="inprogress">In Progress</option>
             <option value="complete">Complete</option>
-            <option value="blocked">Blocked</option>
           </select>
         </div>
         <div class="filter-group">
@@ -1212,18 +1210,6 @@
         </div>
       </div>
 
-      <div class="column" id="blocked-column" data-status="blocked">
-        <div class="column-header">
-          <div class="column-title">🚫 Blocked</div>
-          <div class="column-count" id="blocked-count">0</div>
-        </div>
-        <div class="column-body" id="blocked-body">
-          <div class="empty-state">
-            <div class="empty-state-icon">🚧</div>
-            <div>No tasks yet</div>
-          </div>
-        </div>
-      </div>
     </div>
   </main>
 
@@ -2197,8 +2183,7 @@
               const statusLabels = {
                 'todo': 'To Do',
                 'inprogress': 'In Progress',
-                'complete': 'Complete',
-                'blocked': 'Blocked'
+                'complete': 'Complete'
               };
               task.activity.push({
                 action: `Moved to ${statusLabels[newStatus]}`,
@@ -2221,7 +2206,7 @@
 
     // ============ RENDERING ============
     function renderBoard() {
-      const columnStatuses = ['todo', 'inprogress', 'complete', 'blocked'];
+      const columnStatuses = ['todo', 'inprogress', 'complete'];
 
       columnStatuses.forEach(status => {
         const body = document.getElementById(`${status}-body`);
@@ -2390,8 +2375,7 @@
       const statusMap = {
         'todo': 'todoCount',
         'inprogress': 'inprogressCount',
-        'complete': 'completeCount',
-        'blocked': 'blockedCount'
+        'complete': 'completeCount'
       };
 
       document.getElementById('totalCount').textContent = allTasks.length;
