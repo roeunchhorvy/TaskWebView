@@ -1729,23 +1729,32 @@
       );
     }
 
-    function handleStaffFileUploadCard(taskId, type) {
+    function handleStaffFileUploadCard(taskId) {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
-      const inputId = `staff${type === 'image' ? 'Image' : 'Video'}Input_${taskId}`;
-      const input = document.getElementById(inputId);
+      const input = document.getElementById(`staffMediaInput_${taskId}`);
       const file = input.files[0];
 
       if (!file) return;
 
       // Validate file type
       const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
-      const validTypes = type === 'image' ? validImageTypes : validVideoTypes;
+      const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'application/x-msvideo', 'image/gif'];
+      const validVideoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.m4v', '.gif'];
+      const validImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
-      if (!validTypes.includes(file.type)) {
-        showStatusMessage(`❌ Invalid file type. Please upload a valid ${type}.`, 'error');
+      const fileName = file.name.toLowerCase();
+      const fileExt = fileName.substring(fileName.lastIndexOf('.'));
+
+      // Auto-detect file type
+      let fileType = 'unknown';
+      if (validImageTypes.includes(file.type) || validImageExtensions.includes(fileExt)) {
+        fileType = 'image';
+      } else if (validVideoTypes.includes(file.type) || validVideoExtensions.includes(fileExt)) {
+        fileType = 'video';
+      } else {
+        showStatusMessage('❌ Invalid file format. Supported: Images (JPG, PNG, WebP) or Videos (MP4, WebM, OGG, MOV, AVI, MKV, GIF)', 'error');
         input.value = '';
         return;
       }
@@ -1758,13 +1767,13 @@
         return;
       }
 
-      showStatusMessage(`📤 Uploading ${type}...`, 'info');
+      showStatusMessage(`📤 Uploading ${fileType}...`, 'info');
 
       const reader = new FileReader();
       reader.onload = (e) => {
         const fileObj = {
           id: generateId(),
-          type: type,
+          type: fileType,
           name: file.name,
           size: file.size,
           data: e.target.result,
@@ -1775,11 +1784,14 @@
         task.uploadedFiles.push(fileObj);
 
         if (!task.activity) task.activity = [];
-        task.activity.push({ action: `${type === 'image' ? 'Image' : 'Video'} uploaded: ${file.name}`, timestamp: Date.now() });
+        task.activity.push({ action: `${fileType === 'image' ? 'Image' : 'Video'} uploaded: ${file.name}`, timestamp: Date.now() });
+
+        console.log('File uploaded:', fileObj);
+        console.log('Task uploadedFiles:', task.uploadedFiles);
 
         saveTasks();
         renderBoard();
-        showStatusMessage(`✅ ${type === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total)`, 'success');
+        showStatusMessage(`✅ ${fileType === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total)`, 'success');
       };
 
       reader.onerror = () => {
@@ -2246,7 +2258,17 @@
 
     // ============ PERSISTENCE ============
     function saveTasks() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        console.log('Tasks saved successfully');
+      } catch (error) {
+        console.error('Failed to save tasks:', error);
+        if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+          showStatusMessage('❌ Storage full! File too large or too many files. Try deleting some files.', 'error');
+        } else {
+          showStatusMessage('❌ Error saving file. Please check browser console.', 'error');
+        }
+      }
     }
 
     function loadTasks() {
@@ -2488,7 +2510,7 @@
           if (task.uploadedFiles && task.uploadedFiles.length > 0) {
             uploadPreviews = task.uploadedFiles.map(file => `
               <div class="upload-preview">
-                ${file.type === 'image' ? `<img src="${file.data}" class="preview-thumb" alt="preview">` : `<div class="preview-thumb" style="background: #334155; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎥</div>`}
+                ${file.type === 'image' ? `<img src="${file.data}" class="preview-thumb" alt="preview">` : `<video src="${file.data}" class="preview-thumb" style="background: #334155; width: 60px; height: 60px; border-radius: 4px; object-fit: cover;" controls></video>`}
                 <div class="preview-info">
                   <div class="preview-name">${file.name}</div>
                   <div class="preview-size">${(file.size / 1024).toFixed(1)} KB</div>
@@ -2505,19 +2527,13 @@
               ${locationPreview}
               <div class="staff-actions-buttons">
                 <div class="file-input-wrapper" style="flex: 1;">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffImageInput_${task.id}').click()">
-                    📷 Image
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffMediaInput_${task.id}').click()">
+                    📁 Upload Image/Video
                   </button>
-                  <input type="file" id="staffImageInput_${task.id}" accept="image/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'image')">
-                </div>
-                <div class="file-input-wrapper" style="flex: 1;">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffVideoInput_${task.id}').click()">
-                    🎥 Video
-                  </button>
-                  <input type="file" id="staffVideoInput_${task.id}" accept="video/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}', 'video')">
+                  <input type="file" id="staffMediaInput_${task.id}" accept="image/*,video/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}')">
                 </div>
               </div>
-              ${uploadPreviews ? `<div style="margin: 0.5rem 0;">${uploadPreviews}</div>` : ''}
+              ${uploadPreviews ? `<div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(30, 41, 59, 0.5); border-radius: 4px;">${uploadPreviews}</div>` : ''}
               <button type="button" class="btn btn-success btn-sm" style="width: 100%;" onclick="event.stopPropagation(); staffCompleteTaskFromCard('${task.id}')" ${filesCount === 0 ? 'disabled' : ''}>
                 ✅ Complete Task
               </button>
