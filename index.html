@@ -1662,6 +1662,14 @@
       document.getElementById('exportSyncBtn').style.display = 'block';
       document.getElementById('importSyncBtn').style.display = 'block';
 
+      // Check if staff has tasks - show sync hint if not
+      if (!isAdmin && tasks.length > 0) {
+        const staffTasks = tasks.filter(t => t.assignedTo === currentUser.id);
+        if (staffTasks.length === 0) {
+          showStatusMessage('💡 Tip: Click ⬇️ Download on the admin browser, then ⬆️ Upload here to see your tasks!', 'info');
+        }
+      }
+
       // Show/hide New Task button
       const newTaskBtn = document.querySelector('button[onclick="openNewTaskModal()"]');
       if (newTaskBtn) {
@@ -2384,7 +2392,13 @@
             saveTasks();
             loadUsers();
             renderBoard();
-            showStatusMessage('✅ Tasks synced successfully from file!', 'success');
+
+            const staffAssigned = currentUser && currentUser.role === 'staff'
+              ? tasks.filter(t => t.assignedTo === currentUser.id).length
+              : 0;
+
+            showStatusMessage(`✅ Synced! Found ${tasks.length} total tasks (${staffAssigned} assigned to you)`, 'success');
+            console.log('Sync complete:', { totalTasks: tasks.length, staffAssigned });
           } catch (error) {
             console.error('Failed to upload sync file:', error);
             showStatusMessage('❌ Invalid sync file. Please check and try again.', 'error');
