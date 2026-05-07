@@ -882,6 +882,31 @@
       color: var(--text-secondary);
     }
 
+    .file-preview-card {
+      cursor: pointer;
+    }
+
+    /* File Viewer Modal */
+    #fileViewerModal .modal-content {
+      max-width: 900px;
+    }
+
+    #fileViewerContent {
+      position: relative;
+    }
+
+    #fileViewerContent img {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+    }
+
+    #fileViewerContent video {
+      width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+    }
+
     .modal-actions {
       display: flex;
       gap: 1rem;
@@ -1803,6 +1828,19 @@
       </form>
     </div>
   </div>
+
+  <!-- File Viewer Modal -->
+  <div class="modal-overlay" id="fileViewerModal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h2 id="fileViewerTitle">Preview</h2>
+        <button class="modal-close" onclick="closeFileViewer()">✕</button>
+      </div>
+      <div id="fileViewerContent" style="width: 100%; max-height: 70vh; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden;">
+        <!-- File content will be injected here -->
+      </div>
+    </div>
+  </div>
   </div><!-- End main-content -->
 
   <script>
@@ -2257,6 +2295,7 @@
     function closeAllModals() {
       document.getElementById('taskModal').classList.remove('active');
       document.getElementById('staffTaskModal').classList.remove('active');
+      document.getElementById('fileViewerModal').classList.remove('active');
     }
 
     function updateStaffModalSections(task) {
@@ -2917,7 +2956,7 @@
       if (task.uploadedFiles && task.uploadedFiles.length > 0) {
         document.getElementById('uploadedFilesSection').style.display = 'block';
         const preview = document.getElementById('uploadedFilesPreview');
-        preview.innerHTML = task.uploadedFiles.map(file => {
+        preview.innerHTML = task.uploadedFiles.map((file, index) => {
           let thumb = '';
           if (file.type === 'image' && file.data) {
             thumb = `<img src="${file.data}" alt="${file.name}">`;
@@ -2929,7 +2968,7 @@
             thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">📁</div>`;
           }
           return `
-            <div class="file-preview-card">
+            <div class="file-preview-card" data-file-index="${index}">
               <div class="file-preview-thumb">${thumb}</div>
               <div class="file-preview-info">
                 <div class="file-preview-name">${file.name}</div>
@@ -2938,6 +2977,16 @@
             </div>
           `;
         }).join('');
+
+        // Add click handlers to file preview cards
+        document.querySelectorAll('.file-preview-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const fileIndex = parseInt(card.getAttribute('data-file-index'));
+            if (task.uploadedFiles[fileIndex]) {
+              openFileViewer(task.uploadedFiles[fileIndex]);
+            }
+          });
+        });
       } else {
         document.getElementById('uploadedFilesSection').style.display = 'none';
       }
@@ -2961,6 +3010,29 @@
     function closeTaskModal() {
       document.getElementById('taskModal').classList.remove('active');
       currentEditingTaskId = null;
+    }
+
+    function openFileViewer(file) {
+      const content = document.getElementById('fileViewerContent');
+      const title = document.getElementById('fileViewerTitle');
+
+      title.textContent = file.name;
+
+      if (file.type === 'image' && file.data) {
+        content.innerHTML = `<img src="${file.data}" alt="${file.name}">`;
+      } else if (file.type === 'video' && file.data) {
+        content.innerHTML = `<video controls style="width: 100%; height: 100%; object-fit: contain;"><source src="${file.data}"></video>`;
+      } else if (file.isLargeVideo) {
+        content.innerHTML = `<div style="text-align: center; padding: 2rem;"><div style="font-size: 3rem; margin-bottom: 1rem;">🎥</div><p style="color: var(--text-secondary);">Large video file (${file.dataSize})</p><p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">Size limit: cannot preview in browser</p></div>`;
+      } else {
+        content.innerHTML = `<div style="text-align: center; padding: 2rem;"><div style="font-size: 3rem; margin-bottom: 1rem;">📁</div><p style="color: var(--text-secondary);">File: ${file.name}</p></div>`;
+      }
+
+      document.getElementById('fileViewerModal').classList.add('active');
+    }
+
+    function closeFileViewer() {
+      document.getElementById('fileViewerModal').classList.remove('active');
     }
 
     // ============ DRAG & DROP ============
