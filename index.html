@@ -3043,9 +3043,11 @@
 
       // Load latest data from server before opening modal
       const loadAndOpen = async () => {
-        if (serverAvailable) {
-          await loadFromServer();
-        }
+        // Always try to load from server to ensure latest data
+        await loadFromServer().catch(() => {
+          // If server fails, use local data
+          console.log('Using local data');
+        });
 
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
