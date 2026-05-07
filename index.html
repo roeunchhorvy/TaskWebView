@@ -3033,6 +3033,8 @@
         });
       }
 
+      // Hide sections not needed for new tasks
+      document.getElementById('uploadedFilesSection').style.display = 'none';
       document.getElementById('activitySection').style.display = 'none';
       document.getElementById('deleteBtn').style.display = 'none';
       populateStaffDropdown();
