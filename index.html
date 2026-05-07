@@ -1249,19 +1249,10 @@
         <span>👤</span>
         <span id="userName">User</span>
       </div>
-      <div style="display: flex; gap: 0.5rem; margin: 0 1rem; flex-wrap: wrap;">
-        <button class="btn btn-secondary btn-sm" id="downloadSyncBtn" onclick="downloadSyncFile()" style="display: none;" title="Download tasks to share">
-          ⬇️ Download
-        </button>
-        <button class="btn btn-secondary btn-sm" id="uploadSyncBtn" onclick="uploadSyncFile()" style="display: none;" title="Upload tasks from file">
-          ⬆️ Upload
-        </button>
-        <button class="btn btn-secondary btn-sm" id="exportSyncBtn" onclick="exportSyncCode()" style="display: none;" title="Export tasks for sharing">
-          🔄 Export Code
-        </button>
-        <button class="btn btn-secondary btn-sm" id="importSyncBtn" onclick="importSyncCode()" style="display: none;" title="Import tasks from another device">
-          📥 Import Code
-        </button>
+      <div style="display: flex; gap: 0.5rem; margin: 0 1rem; flex-wrap: wrap; align-items: center;">
+        <div id="serverStatus" style="font-size: 0.75rem; color: #94a3b8; display: none;">
+          <span id="serverStatusText">🟢 Server</span>
+        </div>
         <button class="btn btn-secondary btn-sm" id="logoutBtn" onclick="logout()" style="display: none;">
           🚪 Logout
         </button>
@@ -1512,6 +1503,10 @@
     const STORAGE_KEY = 'stafftask_tasks';
     const USERS_KEY = 'stafftask_users';
     const SYNC_CODE_KEY = 'stafftask_sync_code';
+    const SERVER_URL = window.location.origin === 'file://' ? 'http://localhost:3000' : window.location.origin;
+    let serverAvailable = false;
+    let lastSyncTime = 0;
+    const SYNC_INTERVAL = 2000; // Sync every 2 seconds
     const SESSION_KEY = 'stafftask_session';
 
     // ============ AUTHENTICATION ============
@@ -1530,7 +1525,7 @@
       }
     }
 
-    function handleLogin(event) {
+    async function handleLogin(event) {
       event.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
@@ -1546,7 +1541,7 @@
       localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('mainContent').classList.add('visible');
-      updateUIForRole();
+      await updateUIForRole();
       renderBoard();
 
       // Clear form
@@ -1561,21 +1556,18 @@
       document.getElementById('mainContent').classList.remove('visible');
       document.getElementById('userName').textContent = 'User';
       document.getElementById('logoutBtn').style.display = 'none';
-      document.getElementById('downloadSyncBtn').style.display = 'none';
-      document.getElementById('uploadSyncBtn').style.display = 'none';
-      document.getElementById('exportSyncBtn').style.display = 'none';
-      document.getElementById('importSyncBtn').style.display = 'none';
+      document.getElementById('serverStatus').style.display = 'none';
       document.getElementById('userDisplay').style.display = 'none';
       closeAllModals();
     }
 
-    function checkSession() {
+    async function checkSession() {
       const stored = localStorage.getItem(SESSION_KEY);
       if (stored) {
         currentUser = JSON.parse(stored);
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('mainContent').classList.add('visible');
-        updateUIForRole();
+        await updateUIForRole();
         renderBoard();
       } else {
         document.getElementById('loginScreen').classList.remove('hidden');
@@ -1642,13 +1634,13 @@
       saveTasks();
     }
 
-    function loadRole() {
+    async function loadRole() {
       const saved = localStorage.getItem(ROLE_KEY);
       currentUserRole = saved || 'admin';
-      updateUIForRole();
+      await updateUIForRole();
     }
 
-    function updateUIForRole() {
+    async function updateUIForRole() {
       if (!currentUser) return;
 
       const isAdmin = currentUser.role === 'admin';
@@ -1657,10 +1649,10 @@
       document.getElementById('userName').textContent = currentUser.name;
       document.getElementById('userDisplay').style.display = 'flex';
       document.getElementById('logoutBtn').style.display = 'block';
-      document.getElementById('downloadSyncBtn').style.display = 'block';
-      document.getElementById('uploadSyncBtn').style.display = 'block';
-      document.getElementById('exportSyncBtn').style.display = 'block';
-      document.getElementById('importSyncBtn').style.display = 'block';
+      document.getElementById('serverStatus').style.display = 'block';
+
+      // Check server availability
+      await checkServerAvailability();
 
       // Check if staff has tasks - show sync hint if not
       if (!isAdmin && tasks.length > 0) {
@@ -2291,7 +2283,12 @@
     function saveTasks() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-        console.log('Tasks saved successfully');
+        console.log('Tasks saved to localStorage');
+
+        // Save to server if available
+        if (serverAvailable) {
+          saveToServer();
+        }
       } catch (error) {
         console.error('Failed to save tasks:', error);
         if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -2300,6 +2297,67 @@
           showStatusMessage('❌ Error saving file. Please check browser console.', 'error');
         }
       }
+    }
+
+    async function saveToServer() {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks, users })
+        });
+        if (response.ok) {
+          console.log('✅ Synced to server');
+        }
+      } catch (error) {
+        console.error('Server save failed:', error);
+      }
+    }
+
+    async function loadFromServer() {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/sync`);
+        if (response.ok) {
+          const data = await response.json();
+          tasks = data.tasks || [];
+          users = data.users || [];
+          console.log('✅ Loaded from server:', tasks.length, 'tasks');
+          return true;
+        }
+      } catch (error) {
+        console.error('Server load failed:', error);
+      }
+      return false;
+    }
+
+    async function checkServerAvailability() {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/health`, { method: 'GET' });
+        serverAvailable = response.ok;
+        if (serverAvailable) {
+          console.log('🟢 Server available - auto-sync enabled');
+          await loadFromServer();
+          renderBoard();
+          startAutoSync();
+        } else {
+          console.log('🔴 Server not available - using localStorage');
+        }
+      } catch (error) {
+        console.log('🔴 Server not available - using localStorage only');
+        serverAvailable = false;
+      }
+    }
+
+    function startAutoSync() {
+      setInterval(async () => {
+        if (serverAvailable && currentUser) {
+          const now = Date.now();
+          if (now - lastSyncTime > SYNC_INTERVAL) {
+            await loadFromServer();
+            lastSyncTime = now;
+          }
+        }
+      }, SYNC_INTERVAL);
     }
 
     function generateSyncCode() {

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StaffTask – Client Project Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1e293b;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .page {
+      width: 794px;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    }
+
+    /* ── COVER ── */
+    .cover {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0e7490 100%);
+      color: #fff;
+      padding: 64px 56px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; right: -60px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: rgba(6,182,212,0.15);
+    }
+    .cover-badge {
+      display: inline-block;
+      background: rgba(6,182,212,0.25);
+      border: 1px solid rgba(6,182,212,0.5);
+      color: #67e8f9;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .cover h1 {
+      font-size: 38px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .cover h1 span { color: #22d3ee; }
+    .cover .subtitle {
+      font-size: 15px;
+      color: #94a3b8;
+      max-width: 420px;
+      margin-bottom: 40px;
+    }
+    .cover-meta {
+      display: flex;
+      gap: 32px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .cover-meta strong { color: #e2e8f0; display: block; font-size: 13px; }
+
+    /* ── BODY ── */
+    .body { padding: 48px 56px; }
+
+    /* Section */
+    .section { margin-bottom: 40px; }
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #0891b2;
+      margin-bottom: 6px;
+    }
+    .section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .section p {
+      color: #475569;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    /* Highlight box */
+    .highlight-box {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border-left: 4px solid #0891b2;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 16px 0;
+    }
+    .highlight-box p {
+      color: #0c4a6e;
+      font-size: 13.5px;
+      margin: 0;
+    }
+
+    /* Two columns */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+
+    /* Role cards */
+    .role-card {
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .role-card.admin {
+      background: linear-gradient(135deg, #1e3a5f, #1e40af);
+      color: #fff;
+    }
+    .role-card.staff {
+      background: linear-gradient(135deg, #064e3b, #065f46);
+      color: #fff;
+    }
+    .role-card .role-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .role-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+    .role-card ul { list-style: none; padding: 0; }
+    .role-card ul li {
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+      padding: 3px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .role-card ul li::before {
+      content: '✓';
+      position: absolute; left: 0;
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    /* Workflow steps */
+    .workflow { display: flex; align-items: flex-start; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+    .step {
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+      position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -10px; top: 16px;
+      font-size: 18px;
+      color: #0891b2;
+      font-weight: 700;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 8px;
+    }
+    .step-title { font-size: 11px; font-weight: 600; color: #0f172a; }
+    .step-desc { font-size: 10px; color: #64748b; margin-top: 3px; }
+
+    /* Feature list */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .feature-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .feature-item h4 { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+    .feature-item p { font-size: 11px; color: #64748b; margin: 0; }
+
+    /* Benefits table */
+    .benefits-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+    .benefits-table th {
+      background: #0f172a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+    }
+    .benefits-table th:first-child { border-radius: 8px 0 0 0; }
+    .benefits-table th:last-child { border-radius: 0 8px 0 0; }
+    .benefits-table td {
+      padding: 10px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #475569;
+      vertical-align: top;
+    }
+    .benefits-table tr:nth-child(even) td { background: #f8fafc; }
+    .benefits-table td:first-child { font-weight: 600; color: #0f172a; }
+    .tag {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    /* Tech stack */
+    .tech-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .tech-badge {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tech-badge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #0891b2;
+    }
+
+    /* Future section */
+    .future-list { list-style: none; padding: 0; margin-top: 12px; }
+    .future-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12.5px;
+      color: #475569;
+    }
+    .future-list li:last-child { border-bottom: none; }
+    .future-num {
+      width: 22px; height: 22px;
+      background: #0891b2;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Footer */
+    .footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 24px 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+    .footer strong { color: #e2e8f0; }
+
+    /* Print */
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; border-radius: 0; box-shadow: none; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="cover-badge">Project Overview</div>
+    <h1>Staff<span>Task</span><br/>Web Application</h1>
+    <p class="subtitle">A smart task management system built for small businesses to manage and track field staff work — simply and efficiently.</p>
+    <div class="cover-meta">
+      <div><strong>Prepared For</strong>Client Presentation</div>
+      <div><strong>Document Type</strong>Project Overview Report</div>
+      <div><strong>Date</strong>May 2026</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- WHAT IS IT -->
+    <div class="section">
+      <div class="section-label">01 — Overview</div>
+      <h2>What is StaffTask?</h2>
+      <p>StaffTask is a <strong>web-based task management application</strong> designed specifically for small businesses that have both office managers and field staff. It gives managers full control over task assignment and monitoring, while providing field workers a simple, guided interface to complete and document their work.</p>
+      <div class="highlight-box">
+        <p>💡 <strong>In simple terms:</strong> The manager creates jobs and assigns them to staff. Staff go to the location, do the work, upload a photo or video as proof, and mark it done — all from their phone or computer. No paper, no back-and-forth phone calls.</p>
+      </div>
+    </div>
+
+    <!-- TWO ROLES -->
+    <div class="section">
+      <div class="section-label">02 — User Roles</div>
+      <h2>Two Roles, One System</h2>
+      <p>The application has two clearly separated roles — each with the right tools for their job.</p>
+      <div class="two-col">
+        <div class="role-card admin">
+          <span class="role-icon">👨‍💼</span>
+          <h3>Admin (Manager)</h3>
+          <ul>
+            <li>Create and assign tasks</li>
+            <li>Set priority levels and due dates</li>
+            <li>Drag tasks between status columns</li>
+            <li>Search and filter all tasks</li>
+            <li>View uploaded proof from staff</li>
+            <li>Track task progress in real time</li>
+            <li>Capture GPS location for tasks</li>
+          </ul>
+        </div>
+        <div class="role-card staff">
+          <span class="role-icon">👨‍🔧</span>
+          <h3>Staff (Field Worker)</h3>
+          <ul>
+            <li>View only tasks assigned to them</li>
+            <li>Start a task with GPS check-in</li>
+            <li>Upload image or video as proof</li>
+            <li>Mark task as complete</li>
+            <li>View full task timeline history</li>
+            <li>Mobile-friendly interface</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section">
+      <div class="section-label">03 — Workflow</div>
+      <h2>How It Works</h2>
+      <p>The task moves through a simple, clear lifecycle from creation to completion:</p>
+      <div class="workflow">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Create Task</div>
+          <div class="step-desc">Admin creates and assigns task</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Assign Staff</div>
+          <div class="step-desc">Task appears in staff's list</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Start Task</div>
+          <div class="step-desc">Staff checks in with GPS</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-title">Upload Proof</div>
+          <div class="step-desc">Photo or video uploaded</div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-title">Complete</div>
+          <div class="step-desc">Admin can see full record</div>
+        </div>
+      </div>
+      <p>Every step is automatically logged with a timestamp in the task's activity timeline.</p>
+    </div>
+
+    <!-- KEY FEATURES -->
+    <div class="section">
+      <div class="section-label">04 — Features</div>
+      <h2>Key Features</h2>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <span class="feature-icon">📋</span>
+          <div>
+            <h4>Kanban Board</h4>
+            <p>Visual board showing all tasks by status: To Do, In Progress, Review, and Complete. Drag and drop to update.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📍</span>
+          <div>
+            <h4>GPS Location Tracking</h4>
+            <p>Captures the staff member's exact GPS location when they start a task. Address is shown on a map.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📷</span>
+          <div>
+            <h4>Proof of Work Upload</h4>
+            <p>Staff can upload photos and videos directly from their device as evidence of completed work.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🔍</span>
+          <div>
+            <h4>Search &amp; Filter</h4>
+            <p>Filter tasks by keyword, priority level, status, or assigned staff member instantly.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🕐</span>
+          <div>
+            <h4>Activity Timeline</h4>
+            <p>Every action on a task is automatically recorded with date and time — full audit trail.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">💾</span>
+          <div>
+            <h4>Auto-Save</h4>
+            <p>All data saves automatically in the browser. Refreshing the page does not lose any data.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📱</span>
+          <div>
+            <h4>Mobile Friendly</h4>
+            <p>Fully responsive design — works on phones, tablets, and desktop computers without any app installation.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">⚡</span>
+          <div>
+            <h4>No Installation Needed</h4>
+            <p>Opens directly in any web browser. No software to install, no account needed to get started.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUSINESS BENEFITS -->
+    <div class="section">
+      <div class="section-label">05 — Business Value</div>
+      <h2>Benefits for Your Business</h2>
+      <table class="benefits-table">
+        <thead>
+          <tr>
+            <th>Business Problem</th>
+            <th>How StaffTask Solves It</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>No visibility on field work</td>
+            <td>GPS check-in + proof upload shows exactly where staff were and what was done</td>
+            <td><span class="tag">Full Transparency</span></td>
+          </tr>
+          <tr>
+            <td>Paper-based job sheets get lost</td>
+            <td>All tasks and records stored digitally and persist automatically</td>
+            <td><span class="tag">Zero Paperwork</span></td>
+          </tr>
+          <tr>
+            <td>Staff unsure what to do next</td>
+            <td>Staff see only their assigned tasks in a clear guided workflow</td>
+            <td><span class="tag">Less Confusion</span></td>
+          </tr>
+          <tr>
+            <td>No proof that work was done</td>
+            <td>Staff must upload a photo or video before they can mark a task complete</td>
+            <td><span class="tag">Verified Work</span></td>
+          </tr>
+          <tr>
+            <td>Hard to prioritize urgent jobs</td>
+            <td>Tasks have priority levels (Low / Medium / High) and due dates</td>
+            <td><span class="tag">Better Prioritization</span></td>
+          </tr>
+          <tr>
+            <td>Disputes about job completion</td>
+            <td>Activity timeline records every action with timestamps</td>
+            <td><span class="tag">Clear Audit Trail</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TECH -->
+    <div class="section">
+      <div class="section-label">06 — Technology</div>
+      <h2>Technology Used</h2>
+      <p>StaffTask is built with lightweight, reliable web technologies — no heavy frameworks, no monthly fees for external services.</p>
+      <div class="tech-row">
+        <div class="tech-badge"><span class="dot"></span>HTML5</div>
+        <div class="tech-badge"><span class="dot"></span>CSS3</div>
+        <div class="tech-badge"><span class="dot"></span>Vanilla JavaScript</div>
+        <div class="tech-badge"><span class="dot"></span>Browser LocalStorage</div>
+        <div class="tech-badge"><span class="dot"></span>OpenStreetMap (GPS)</div>
+        <div class="tech-badge"><span class="dot"></span>Geolocation API</div>
+        <div class="tech-badge"><span class="dot"></span>FileReader API</div>
+      </div>
+      <div class="highlight-box" style="margin-top:16px;">
+        <p>✅ <strong>Zero external dependencies.</strong> The entire application runs as a single HTML file — no backend server, no database subscription, no monthly hosting costs required to get started.</p>
+      </div>
+    </div>
+
+    <!-- FUTURE -->
+    <div class="section">
+      <div class="section-label">07 — Future Growth</div>
+      <h2>What Can Be Added Later</h2>
+      <p>The current version is a fully working front-end application. When the business is ready to scale, the following enhancements can be added:</p>
+      <ul class="future-list">
+        <li>
+          <span class="future-num">1</span>
+          <div><strong>User Login System</strong> — Secure accounts with usernames and passwords so staff can only see their own tasks.</div>
+        </li>
+        <li>
+          <span class="future-num">2</span>
+          <div><strong>Backend Database</strong> — Store all data on a server so multiple users can share and sync data in real time.</div>
+        </li>
+        <li>
+          <span class="future-num">3</span>
+          <div><strong>Cloud File Storage</strong> — Upload proof photos and videos to cloud storage (e.g. AWS, Google Drive) to handle large files.</div>
+        </li>
+        <li>
+          <span class="future-num">4</span>
+          <div><strong>Push Notifications</strong> — Notify staff on their phone when a new task is assigned to them.</div>
+        </li>
+        <li>
+          <span class="future-num">5</span>
+          <div><strong>Reports &amp; Analytics</strong> — Export task completion data, staff performance summaries, and monthly reports.</div>
+        </li>
+      </ul>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div><strong>StaffTask</strong> — Role-Based Task Management Web App</div>
+    <div>Confidential · Client Overview Document · May 2026</div>
+  </div>
+
+</div>
+</body>
+</html>
