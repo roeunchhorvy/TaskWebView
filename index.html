@@ -1063,9 +1063,15 @@
     .status-message {
       padding: 1rem;
       border-radius: 8px;
-      margin: 1rem 0;
       display: none;
-      animation: slideIn 0.3s ease;
+      animation: slideInBottom 0.3s ease;
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      max-width: 90%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     .status-message.show {
@@ -1090,14 +1096,14 @@
       color: #67e8f9;
     }
 
-    @keyframes slideIn {
+    @keyframes slideInBottom {
       from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateX(-50%) translateY(20px);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(-50%) translateY(0);
       }
     }
 
