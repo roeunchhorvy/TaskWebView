@@ -2396,7 +2396,7 @@
                   if (file.type === 'image' && file.data) {
                     thumb = `<img src="${file.data}" alt="${file.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
                   } else if (file.type === 'video' && file.data) {
-                    thumb = `<video src="${file.data}" style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                    thumb = `<video src="${file.data}" style="width: 100%; height: 100%; object-fit: cover;" muted autoplay loop></video>`;
                   } else if (file.isLargeVideo) {
                     thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎥</div>`;
                   } else {
@@ -2574,7 +2574,7 @@
             if (file.type === 'image' && file.data) {
               thumb = `<img src="${file.data}" alt="${file.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
             } else if (file.type === 'video' && file.data) {
-              thumb = `<video src="${file.data}" style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+              thumb = `<video src="${file.data}" style="width: 100%; height: 100%; object-fit: cover;" muted autoplay loop></video>`;
             } else if (file.isLargeVideo) {
               thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎥</div>`;
             } else {
