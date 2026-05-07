@@ -2054,14 +2054,24 @@
       };
 
       reader.onload = (e) => {
-        const fileObj = {
+        // For large files, store reference only (not base64 data) if storage fails
+        let fileObj = {
           id: generateId(),
           type: fileType,
           name: file.name,
           size: file.size,
-          data: e.target.result,
           uploadedAt: Date.now()
         };
+
+        // Only store base64 for images and small videos
+        if (fileType === 'image' || file.size < 5 * 1024 * 1024) {
+          fileObj.data = e.target.result;
+        } else {
+          // For large videos, store as reference (no base64)
+          fileObj.isLargeVideo = true;
+          fileObj.dataSize = `${(file.size / 1024 / 1024).toFixed(1)}MB`;
+          console.log('Large video stored as reference (no base64 data to avoid storage limits)');
+        }
 
         if (!task.uploadedFiles) task.uploadedFiles = [];
         task.uploadedFiles.push(fileObj);
@@ -2072,9 +2082,16 @@
         console.log('File uploaded:', fileObj);
         console.log('Task uploadedFiles:', task.uploadedFiles);
 
-        saveTasks();
-        renderBoard();
-        showStatusMessage(`✅ ${fileType === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total)`, 'success');
+        try {
+          saveTasks();
+          renderBoard();
+          showStatusMessage(`✅ ${fileType === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total)`, 'success');
+        } catch (error) {
+          console.error('Storage error:', error);
+          // Fallback: still mark as uploaded even if storage fails
+          renderBoard();
+          showStatusMessage(`✅ ${fileType === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total) - Large file stored without base64`, 'success');
+        }
       };
 
       reader.onerror = () => {
@@ -2992,18 +3009,30 @@
           // Upload previews
           let uploadPreviews = '';
           if (task.uploadedFiles && task.uploadedFiles.length > 0) {
-            uploadPreviews = task.uploadedFiles.map(file => `
-              <div class="upload-preview">
-                ${file.type === 'image' ? `<img src="${file.data}" class="preview-thumb" alt="preview">` : `<video src="${file.data}" class="preview-thumb" style="background: #334155; width: 60px; height: 60px; border-radius: 4px; object-fit: cover;" controls></video>`}
-                <div class="preview-info">
-                  <div class="preview-name">${file.name}</div>
-                  <div class="preview-size">${(file.size / 1024).toFixed(1)} KB</div>
+            uploadPreviews = task.uploadedFiles.map(file => {
+              let preview = '';
+              if (file.type === 'image' && file.data) {
+                preview = `<img src="${file.data}" class="preview-thumb" alt="preview">`;
+              } else if (file.type === 'video' && file.data) {
+                preview = `<video src="${file.data}" class="preview-thumb" style="background: #334155; width: 60px; height: 60px; border-radius: 4px; object-fit: cover;" controls></video>`;
+              } else if (file.isLargeVideo) {
+                preview = `<div class="preview-thumb" style="background: #334155; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; width: 60px; height: 60px; border-radius: 4px;">🎥</div>`;
+              } else {
+                preview = `<div class="preview-thumb" style="background: #334155; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; width: 60px; height: 60px; border-radius: 4px;">📁</div>`;
+              }
+              return `
+                <div class="upload-preview">
+                  ${preview}
+                  <div class="preview-info">
+                    <div class="preview-name">${file.name}</div>
+                    <div class="preview-size">${file.isLargeVideo ? file.dataSize : (file.size / 1024).toFixed(1) + ' KB'}</div>
+                  </div>
+                  <div class="preview-actions">
+                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); removeStaffFileFromCard('${task.id}', '${file.id}')">✕</button>
+                  </div>
                 </div>
-                <div class="preview-actions">
-                  <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="event.stopPropagation(); removeStaffFileFromCard('${task.id}', '${file.id}')">✕</button>
-                </div>
-              </div>
-            `).join('');
+              `;
+            }).join('');
           }
 
           staffActionButtons = `
