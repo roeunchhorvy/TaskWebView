@@ -925,7 +925,8 @@
     #taskForm {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      flex: 1;
+      min-height: 0;
     }
 
     .modal-actions {
@@ -1795,7 +1796,7 @@
       </div>
 
       <form id="taskForm" onsubmit="saveTask(event)">
-        <div id="taskFormContent" style="overflow-y: auto; flex: 1; padding: 0 2rem;">
+        <div id="taskFormContent" style="overflow-y: auto; flex: 1; min-height: 0; padding: 0 2rem;">
         <!-- Basic Info -->
         <div class="form-section">
           <h3>Task Details</h3>
