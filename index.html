@@ -2332,9 +2332,8 @@
         if (task.startLocation) {
           document.getElementById('staffStartLocationInfo').innerHTML = `
             <div class="location-info" style="margin-top: 1rem;">
-              <p><strong>✅ Location captured at:</strong></p>
-              <p style="font-size: 0.875rem; color: #cbd5e1; margin-top: 0.5rem;">📍 ${task.startLocation.address}</p>
-              <p style="font-size: 0.75rem; color: #94a3b8;">Started: ${new Date(task.startedAt).toLocaleString()}</p>
+              <p><strong>📍 Address:</strong></p>
+              <p style="font-size: 0.875rem; color: #cbd5e1; margin-top: 0.5rem;">${task.startLocation.address}</p>
             </div>
           `;
         }
