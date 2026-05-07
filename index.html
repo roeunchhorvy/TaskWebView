@@ -766,6 +766,18 @@
       box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
     }
 
+    /* Date input styling */
+    .form-group input[type="date"] {
+      cursor: pointer;
+      position: relative;
+      background-color: rgba(15, 23, 42, 0.8);
+    }
+
+    .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      filter: invert(0.8);
+    }
+
     .location-info {
       background: rgba(6, 182, 212, 0.1);
       border: 1px solid rgba(6, 182, 212, 0.3);
