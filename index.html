@@ -3290,7 +3290,7 @@
       }
 
       return `
-        <div class="task-card priority-${task.priority} ${isStaff ? 'staff-mode' : ''}" data-task-id="${task.id}" draggable="true" ${!isStaff ? `onclick="${openHandler}"` : ''}>
+        <div class="task-card priority-${task.priority} ${isStaff ? 'staff-mode' : ''}" data-task-id="${task.id}" draggable="true" onclick="${openHandler}">
           <div class="task-header">
             <div class="task-title">${task.title}</div>
             <div class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</div>
