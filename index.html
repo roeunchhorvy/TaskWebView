@@ -1501,6 +1501,9 @@
         <div id="serverStatus" style="font-size: 0.75rem; color: #94a3b8; display: none;">
           <span id="serverStatusText">🟢 Server</span>
         </div>
+        <button class="btn btn-secondary btn-sm" id="syncNowBtn" onclick="syncNow()" style="display: none;" title="Refresh to see latest updates">
+          🔄 Sync Now
+        </button>
         <button class="btn btn-secondary btn-sm" id="logoutBtn" onclick="logout()" style="display: none;">
           🚪 Logout
         </button>
@@ -1753,7 +1756,7 @@
     const SERVER_URL = window.location.origin === 'file://' ? 'http://localhost:3000' : window.location.origin;
     let serverAvailable = false;
     let lastSyncTime = 0;
-    const SYNC_INTERVAL = 2000; // Sync every 2 seconds
+    const SYNC_INTERVAL = 1000; // Sync every 1 second (faster updates)
     const SESSION_KEY = 'stafftask_session';
 
     // ============ AUTHENTICATION ============
@@ -1803,6 +1806,7 @@
       document.getElementById('mainContent').classList.remove('visible');
       document.getElementById('userName').textContent = 'User';
       document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('syncNowBtn').style.display = 'none';
       document.getElementById('serverStatus').style.display = 'none';
       document.getElementById('userDisplay').style.display = 'none';
       closeAllModals();
@@ -1897,6 +1901,7 @@
       document.getElementById('userDisplay').style.display = 'flex';
       document.getElementById('logoutBtn').style.display = 'block';
       document.getElementById('serverStatus').style.display = 'block';
+      document.getElementById('syncNowBtn').style.display = 'block';
 
       // Check server availability
       await checkServerAvailability();
@@ -2596,9 +2601,19 @@
         const response = await fetch(`${SERVER_URL}/api/sync`);
         if (response.ok) {
           const data = await response.json();
-          tasks = data.tasks || [];
-          users = data.users || [];
-          console.log('✅ Loaded from server:', tasks.length, 'tasks');
+          const newTasks = data.tasks || [];
+          const newUsers = data.users || [];
+
+          // Check if tasks changed
+          const tasksChanged = JSON.stringify(tasks) !== JSON.stringify(newTasks);
+
+          tasks = newTasks;
+          users = newUsers;
+
+          if (tasksChanged) {
+            console.log('✅ Server updated with new data:', tasks.length, 'tasks');
+            renderBoard();
+          }
           return true;
         }
       } catch (error) {
@@ -2635,6 +2650,18 @@
           }
         }
       }, SYNC_INTERVAL);
+    }
+
+    async function syncNow() {
+      if (serverAvailable) {
+        showStatusMessage('🔄 Syncing...', 'info');
+        const success = await loadFromServer();
+        if (success) {
+          showStatusMessage('✅ Synced! Latest data loaded', 'success');
+        } else {
+          showStatusMessage('❌ Sync failed', 'error');
+        }
+      }
     }
 
     function generateSyncCode() {
