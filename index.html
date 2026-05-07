@@ -3312,10 +3312,9 @@
               ${locationPreview}
               <div class="staff-actions-buttons">
                 <div class="file-input-wrapper" style="flex: 1;">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('staffMediaInput_${task.id}').click()">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openStaffTaskModal('${task.id}')">
                     📁 Upload Image/Video
                   </button>
-                  <input type="file" id="staffMediaInput_${task.id}" accept="image/*,video/*" style="display:none;" onchange="event.stopPropagation(); handleStaffFileUploadCard('${task.id}')">
                 </div>
               </div>
               ${uploadPreviews ? `<div style="margin: 0.5rem 0; padding: 0.5rem; background: rgba(30, 41, 59, 0.5); border-radius: 4px;">${uploadPreviews}</div>` : ''}
