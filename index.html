@@ -2175,15 +2175,8 @@
           uploadedAt: Date.now()
         };
 
-        // Only store base64 for images and small videos
-        if (fileType === 'image' || file.size < 5 * 1024 * 1024) {
-          fileObj.data = e.target.result;
-        } else {
-          // For large videos, store as reference (no base64)
-          fileObj.isLargeVideo = true;
-          fileObj.dataSize = `${(file.size / 1024 / 1024).toFixed(1)}MB`;
-          console.log('Large video stored as reference (no base64 data to avoid storage limits)');
-        }
+        // Always try to store base64 data for preview capability
+        fileObj.data = e.target.result;
 
         if (!task.uploadedFiles) task.uploadedFiles = [];
         task.uploadedFiles.push(fileObj);
@@ -2200,9 +2193,25 @@
           showStatusMessage(`✅ ${fileType === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total)`, 'success');
         } catch (error) {
           console.error('Storage error:', error);
-          // Fallback: still mark as uploaded even if storage fails
-          renderBoard();
-          showStatusMessage(`✅ ${fileType === 'image' ? 'Image' : 'Video'} uploaded! (${task.uploadedFiles.length} file${task.uploadedFiles.length !== 1 ? 's' : ''} total) - Large file stored without base64`, 'success');
+          // If storage fails, remove the large file and retry with metadata only
+          if (fileType === 'video' && file.size > 5 * 1024 * 1024) {
+            task.uploadedFiles.pop();
+            fileObj.data = null;
+            fileObj.isLargeVideo = true;
+            fileObj.dataSize = `${(file.size / 1024 / 1024).toFixed(1)}MB`;
+            task.uploadedFiles.push(fileObj);
+            try {
+              saveTasks();
+              renderBoard();
+              showStatusMessage(`✅ Large video uploaded (${(file.size / 1024 / 1024).toFixed(1)}MB) - cannot preview due to storage limits`, 'success');
+            } catch (retryError) {
+              showStatusMessage(`❌ Storage full - please remove some files to upload more content`, 'error');
+              task.uploadedFiles.pop();
+            }
+          } else {
+            renderBoard();
+            showStatusMessage(`❌ Storage full - file not saved`, 'error');
+          }
         }
       };
 
