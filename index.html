@@ -2953,8 +2953,14 @@
       document.getElementById('taskModal').classList.add('active');
     }
 
-    function openTaskModal(taskId) {
+    async function openTaskModal(taskId) {
       currentEditingTaskId = taskId;
+
+      // Load latest data from server before opening modal
+      if (serverAvailable) {
+        await loadFromServer();
+      }
+
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
