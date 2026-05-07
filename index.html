@@ -2475,7 +2475,9 @@
           saveTasks();
         }
 
+        // Refresh file display and modal sections
         renderStaffUploadedFiles();
+        updateStaffModalSections(task);
         showStatusMessage(`✅ ${type === 'image' ? 'Image' : 'Video'} uploaded`, 'success');
       };
 
