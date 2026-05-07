@@ -825,6 +825,63 @@
       margin-right: 0.5rem;
     }
 
+    /* Uploaded Files Preview */
+    .uploaded-files-preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .file-preview-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .file-preview-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--cyan);
+    }
+
+    .file-preview-thumb {
+      width: 100%;
+      height: 120px;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      overflow: hidden;
+    }
+
+    .file-preview-thumb img,
+    .file-preview-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .file-preview-info {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .file-preview-name {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      word-break: break-all;
+      margin-bottom: 0.25rem;
+    }
+
+    .file-preview-size {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
     .modal-actions {
       display: flex;
       gap: 1rem;
@@ -1726,6 +1783,12 @@
         </div>
 
         <!-- Activity Log -->
+        <!-- Uploaded Files Preview -->
+        <div class="form-section" id="uploadedFilesSection" style="display: none;">
+          <h3>📁 Uploaded Files</h3>
+          <div class="uploaded-files-preview" id="uploadedFilesPreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;"></div>
+        </div>
+
         <div class="form-section" id="activitySection" style="display: none;">
           <h3>Activity</h3>
           <div class="activity-log" id="activityLog"></div>
@@ -2848,6 +2911,35 @@
       populateStaffDropdown();
       if (task.assignedTo) {
         document.getElementById('taskAssignedTo').value = task.assignedTo;
+      }
+
+      // Uploaded Files Preview
+      if (task.uploadedFiles && task.uploadedFiles.length > 0) {
+        document.getElementById('uploadedFilesSection').style.display = 'block';
+        const preview = document.getElementById('uploadedFilesPreview');
+        preview.innerHTML = task.uploadedFiles.map(file => {
+          let thumb = '';
+          if (file.type === 'image' && file.data) {
+            thumb = `<img src="${file.data}" alt="${file.name}">`;
+          } else if (file.type === 'video' && file.data) {
+            thumb = `<video src="${file.data}" controls style="width: 100%; height: 100%;"></video>`;
+          } else if (file.isLargeVideo) {
+            thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎥</div>`;
+          } else {
+            thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">📁</div>`;
+          }
+          return `
+            <div class="file-preview-card">
+              <div class="file-preview-thumb">${thumb}</div>
+              <div class="file-preview-info">
+                <div class="file-preview-name">${file.name}</div>
+                <div class="file-preview-size">${file.isLargeVideo ? file.dataSize : (file.size / 1024).toFixed(1)}${file.isLargeVideo ? '' : ' KB'}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        document.getElementById('uploadedFilesSection').style.display = 'none';
       }
 
       // Activity Log
