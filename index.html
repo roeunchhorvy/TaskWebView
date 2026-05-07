@@ -1229,6 +1229,10 @@
       display: block;
     }
   </style>
+
+  <!-- Flatpickr Date Picker Library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
   <!-- Login Screen -->
@@ -2514,6 +2518,16 @@
       const day = String(today.getDate()).padStart(2, '0');
       document.getElementById('taskDueDate').value = `${year}-${month}-${day}`;
 
+      // Initialize Flatpickr date picker
+      if (window.flatpickr) {
+        flatpickr('#taskDueDate', {
+          mode: 'single',
+          dateFormat: 'Y-m-d',
+          defaultDate: new Date(),
+          minDate: new Date()
+        });
+      }
+
       document.getElementById('activitySection').style.display = 'none';
       document.getElementById('deleteBtn').style.display = 'none';
       populateStaffDropdown();
@@ -2531,6 +2545,16 @@
       document.getElementById('taskAssignee').value = task.assignee;
       document.getElementById('taskPriority').value = task.priority;
       document.getElementById('taskDueDate').value = task.dueDate;
+
+      // Initialize Flatpickr date picker
+      if (window.flatpickr) {
+        flatpickr('#taskDueDate', {
+          mode: 'single',
+          dateFormat: 'Y-m-d',
+          defaultDate: task.dueDate || new Date(),
+          minDate: new Date()
+        });
+      }
 
       populateStaffDropdown();
       if (task.assignedTo) {
