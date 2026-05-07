@@ -2346,11 +2346,48 @@
         startSection.style.display = 'none';
         uploadSection.style.display = 'none';
         completeSection.style.display = 'none';
+
+        // Show completion info and uploaded files
         document.getElementById('staffStartLocationInfo').innerHTML = `
           <div class="status-message success show" style="margin-top: 1rem;">
             ✅ Task completed on ${new Date(task.completedAt).toLocaleString()}
           </div>
         `;
+
+        // Show uploaded proof files
+        if (task.uploadedFiles && task.uploadedFiles.length > 0) {
+          const container = document.getElementById('staffUploadedFiles');
+          container.innerHTML = `
+            <div style="margin-top: 1.5rem;">
+              <h4 style="color: var(--cyan); margin-bottom: 1rem;">📎 Proof of Work</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
+                ${task.uploadedFiles.map((file) => {
+                  let thumb = '';
+                  if (file.type === 'image' && file.data) {
+                    thumb = `<img src="${file.data}" alt="${file.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                  } else if (file.type === 'video' && file.data) {
+                    thumb = `<video src="${file.data}" style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                  } else if (file.isLargeVideo) {
+                    thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎥</div>`;
+                  } else {
+                    thumb = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">📁</div>`;
+                  }
+                  return `
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.3); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer;" onclick="openFileViewer(${JSON.stringify(file).replace(/"/g, '&quot;')})">
+                      <div style="width: 100%; height: 120px; background: #334155; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        ${thumb}
+                      </div>
+                      <div style="padding: 0.75rem; border-top: 1px solid rgba(51, 65, 85, 0.3); flex: 1;">
+                        <div style="font-size: 0.8rem; color: #f1f5f9; word-break: break-all; margin-bottom: 0.25rem;">${file.name}</div>
+                        <div style="font-size: 0.7rem; color: #cbd5e1;">${file.isLargeVideo ? file.dataSize : (file.size / 1024).toFixed(1)}${file.isLargeVideo ? '' : ' KB'}</div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }
       }
     }
 
