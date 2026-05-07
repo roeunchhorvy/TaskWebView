@@ -1249,12 +1249,18 @@
         <span>👤</span>
         <span id="userName">User</span>
       </div>
-      <div style="display: flex; gap: 0.5rem; margin: 0 1rem;">
+      <div style="display: flex; gap: 0.5rem; margin: 0 1rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" id="downloadSyncBtn" onclick="downloadSyncFile()" style="display: none;" title="Download tasks to share">
+          ⬇️ Download
+        </button>
+        <button class="btn btn-secondary btn-sm" id="uploadSyncBtn" onclick="uploadSyncFile()" style="display: none;" title="Upload tasks from file">
+          ⬆️ Upload
+        </button>
         <button class="btn btn-secondary btn-sm" id="exportSyncBtn" onclick="exportSyncCode()" style="display: none;" title="Export tasks for sharing">
-          🔄 Export Sync
+          🔄 Export Code
         </button>
         <button class="btn btn-secondary btn-sm" id="importSyncBtn" onclick="importSyncCode()" style="display: none;" title="Import tasks from another device">
-          📥 Import Sync
+          📥 Import Code
         </button>
         <button class="btn btn-secondary btn-sm" id="logoutBtn" onclick="logout()" style="display: none;">
           🚪 Logout
@@ -1555,6 +1561,8 @@
       document.getElementById('mainContent').classList.remove('visible');
       document.getElementById('userName').textContent = 'User';
       document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('downloadSyncBtn').style.display = 'none';
+      document.getElementById('uploadSyncBtn').style.display = 'none';
       document.getElementById('exportSyncBtn').style.display = 'none';
       document.getElementById('importSyncBtn').style.display = 'none';
       document.getElementById('userDisplay').style.display = 'none';
@@ -1649,6 +1657,8 @@
       document.getElementById('userName').textContent = currentUser.name;
       document.getElementById('userDisplay').style.display = 'flex';
       document.getElementById('logoutBtn').style.display = 'block';
+      document.getElementById('downloadSyncBtn').style.display = 'block';
+      document.getElementById('uploadSyncBtn').style.display = 'block';
       document.getElementById('exportSyncBtn').style.display = 'block';
       document.getElementById('importSyncBtn').style.display = 'block';
 
@@ -2338,6 +2348,51 @@
       if (code) {
         applySyncCode(code);
       }
+    }
+
+    function downloadSyncFile() {
+      const syncData = {
+        tasks: tasks,
+        users: users,
+        timestamp: Date.now()
+      };
+      const dataStr = JSON.stringify(syncData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `stafftask_sync_${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showStatusMessage('✅ Sync file downloaded! Open it in another browser.', 'success');
+    }
+
+    function uploadSyncFile() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const syncData = JSON.parse(event.target.result);
+            tasks = syncData.tasks || [];
+            users = syncData.users || [];
+            saveTasks();
+            loadUsers();
+            renderBoard();
+            showStatusMessage('✅ Tasks synced successfully from file!', 'success');
+          } catch (error) {
+            console.error('Failed to upload sync file:', error);
+            showStatusMessage('❌ Invalid sync file. Please check and try again.', 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
     }
 
     function loadTasks() {
