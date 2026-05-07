@@ -2326,7 +2326,9 @@
       } else if (task.status === 'inprogress') {
         startSection.style.display = 'none';
         uploadSection.style.display = 'block';
-        completeSection.style.display = 'block';
+
+        // Only show complete button if files are uploaded
+        completeSection.style.display = (staffUploadedFiles.length > 0) ? 'block' : 'none';
 
         // Show start location
         if (task.startLocation) {
@@ -2483,6 +2485,12 @@
 
     function renderStaffUploadedFiles() {
       const container = document.getElementById('staffUploadedFiles');
+      const completeSection = document.getElementById('staffCompleteSection');
+
+      // Show/hide complete button based on files
+      if (completeSection) {
+        completeSection.style.display = (staffUploadedFiles.length > 0) ? 'block' : 'none';
+      }
 
       if (staffUploadedFiles.length === 0) {
         container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem;">No files uploaded yet</p>';
