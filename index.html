@@ -1298,7 +1298,6 @@
           <input type="text" id="assigneeFilter" placeholder="Filter by staff name...">
         </div>
         <button class="btn btn-primary" onclick="openNewTaskModal()">➕ New Task</button>
-        <button class="btn btn-secondary" onclick="clearFilters()">Reset</button>
       </div>
     </div>
 
@@ -2495,6 +2494,14 @@
       currentEditingTaskId = null;
       document.getElementById('modalTitle').textContent = 'New Task';
       document.getElementById('taskForm').reset();
+
+      // Set default due date to today
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      document.getElementById('taskDueDate').value = `${year}-${month}-${day}`;
+
       document.getElementById('activitySection').style.display = 'none';
       document.getElementById('deleteBtn').style.display = 'none';
       populateStaffDropdown();
