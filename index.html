@@ -922,12 +922,19 @@
       object-fit: contain;
     }
 
+    #taskForm {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
     .modal-actions {
       display: flex;
       gap: 1rem;
-      margin-top: 2rem;
-      padding-top: 2rem;
+      margin-top: 0;
+      padding: 2rem;
       border-top: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .modal-actions button {
@@ -1788,6 +1795,7 @@
       </div>
 
       <form id="taskForm" onsubmit="saveTask(event)">
+        <div id="taskFormContent" style="overflow-y: auto; flex: 1; padding: 0 2rem;">
         <!-- Basic Info -->
         <div class="form-section">
           <h3>Task Details</h3>
@@ -1838,6 +1846,7 @@
         <div class="form-section" id="activitySection" style="display: none;">
           <h3>Activity</h3>
           <div class="activity-log" id="activityLog"></div>
+        </div>
         </div>
 
         <!-- Form Actions -->
