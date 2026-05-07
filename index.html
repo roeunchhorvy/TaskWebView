@@ -2953,16 +2953,26 @@
       document.getElementById('taskModal').classList.add('active');
     }
 
-    async function openTaskModal(taskId) {
+    function openTaskModal(taskId) {
       currentEditingTaskId = taskId;
 
       // Load latest data from server before opening modal
-      if (serverAvailable) {
-        await loadFromServer();
-      }
+      const loadAndOpen = async () => {
+        if (serverAvailable) {
+          await loadFromServer();
+        }
 
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        displayTaskModal(task);
+      };
+
+      loadAndOpen();
+      return;
+    }
+
+    function displayTaskModal(task) {
 
       document.getElementById('modalTitle').textContent = 'Edit Task';
       document.getElementById('taskTitle').value = task.title;
